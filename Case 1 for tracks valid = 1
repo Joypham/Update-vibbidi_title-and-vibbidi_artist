@@ -1,0 +1,34 @@
+-- UPDATE datasources 
+-- Join (
+SELECT
+
+	tracks.title as track_title,
+	tracks.Artist,
+	datasources.TrackId,
+	datasources.id as datasource_id,
+	IF(datasources.TrackId = '' or datasources.TrackId is null, Trim(datasources.Ext ->> '$.Title'),trim(datasources.info ->> '$.vibbidi_title')) as vibbidi_title,
+	IF(datasources.TrackId = '' or datasources.TrackId is null, trim(datasources.ArtistName),trim(tracks.Artist)) as vibbidi_artist,
+	datasources.Info as old_datasourceinfo,
+	datasources.ext as old_datasource_ext
+
+FROM
+datasources
+Join tracks on tracks.Id = datasources.TrackId and tracks.Valid = 1
+where
+datasources.Valid = 1
+and
+(
+datasources.Info ->> '$.vibbidi_title' like '%null%'
+or
+datasources.Info ->> '$.vibbidi_title' is null
+or
+datasources.Info ->> '$.vibbidi_title'  = ''
+)
+group by datasources.id
+ORDER BY
+tracks.Id,
+datasources.SourceURI
+-- ) as t1
+-- on t1.datasource_id = datasources.id
+-- set
+--  datasources.Info = JSON_SET(IFNULL(datasources.Info, JSON_OBJECT()),'$.vibbidi_artist',t1.vibbidi_artist,'$.vibbidi_title',t1.vibbidi_title)
