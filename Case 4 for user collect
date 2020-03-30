@@ -1,0 +1,52 @@
+-- 18992
+-- UPDATE datasources 
+-- Join (
+SELECT
+	collections.UserId,
+	collections.Title as collection_title,
+	collections.UUID,
+	if(videos.Artist is null or videos.Artist = '' or videos.Artist LIKE '%YouTube%','Various artist',trim(videos.Artist)) as vibbidi_artist,
+	if(videos.Title like '%YouTube%' or videos.Title = '' or videos.Title is NULL, 'Untitled',trim(videos.Title)) as vibbidi_title,
+	videos.Artist,
+	videos.Title,
+	videos.id as video_id,
+	datasources.FileName,
+	collection_datasource.DatasourceId,
+	datasources.Info as old_datasourceinfo
+	
+FROM
+	collections
+Join collection_datasource on collection_datasource.CollectionId = collections.UUID and collections.Valid = 1
+Join datasources on datasources.id = collection_datasource.DatasourceId and datasources.Valid =1 and datasources.TrackId <> ''
+JOIN videos on videos.id = collection_datasource.ext ->> '$.videoid' and videos.Valid = 1
+left Join tracks on tracks.Id = datasources.TrackId and tracks.Valid = 1
+WHERE
+tracks.id is NULL
+and
+collections.Valid = 1
+and
+(
+datasources.Info ->> '$.vibbidi_title' = 'null'
+or
+datasources.Info ->> '$.vibbidi_title' is null
+or
+datasources.Info ->> '$.vibbidi_title'  = ''
+or
+datasources.Info ->> '$.vibbidi_artist' = 'null'
+or
+datasources.Info ->> '$.vibbidi_artist' is null
+or
+datasources.Info ->> '$.vibbidi_artist'  = ''
+)
+
+group by datasources.id
+ORDER BY
+collections.UserId,
+collections.Title,
+tracks.Id,
+datasources.SourceURI
+
+-- ) as t1
+-- on t1.datasource_id = datasources.id
+-- set
+--  datasources.Info = JSON_SET(IFNULL(datasources.Info, JSON_OBJECT()),'$.vibbidi_artist',t1.vibbidi_artist,'$.vibbidi_title',t1.vibbidi_title)
