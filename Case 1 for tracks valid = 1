@@ -3,10 +3,12 @@
 SELECT
 
 	tracks.title as track_title,
+	datasources.SourceURI,
 	tracks.Artist,
+	datasources.CreatedAt,
 	datasources.TrackId,
 	datasources.id as datasource_id,
-	IF(datasources.TrackId = '' or datasources.TrackId is null, Trim(datasources.Ext ->> '$.Title'),trim(datasources.info ->> '$.vibbidi_title')) as vibbidi_title,
+	IF(datasources.TrackId = '' or datasources.TrackId is null, Trim(datasources.Ext ->> '$.Title'),trim(tracks.title)) as vibbidi_title,
 	IF(datasources.TrackId = '' or datasources.TrackId is null, trim(datasources.ArtistName),trim(tracks.Artist)) as vibbidi_artist,
 	datasources.Info as old_datasourceinfo,
 	datasources.ext as old_datasource_ext
@@ -18,16 +20,23 @@ where
 datasources.Valid = 1
 and
 (
-datasources.Info ->> '$.vibbidi_title' like '%null%'
+datasources.Info ->> '$.vibbidi_title' = 'null'
 or
 datasources.Info ->> '$.vibbidi_title' is null
 or
 datasources.Info ->> '$.vibbidi_title'  = ''
+or
+datasources.Info ->> '$.vibbidi_artist' = 'null'
+or
+datasources.Info ->> '$.vibbidi_artist' is null
+or
+datasources.Info ->> '$.vibbidi_artist'  = ''
 )
 group by datasources.id
 ORDER BY
-tracks.Id,
-datasources.SourceURI
+datasources.CreatedAt DESC
+-- tracks.Id,
+-- datasources.SourceURI
 -- ) as t1
 -- on t1.datasource_id = datasources.id
 -- set
