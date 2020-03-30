@@ -1,0 +1,38 @@
+Affected rows: 4332, Time: 18.423000s
+
+UPDATE datasources 
+Join (
+SELECT 
+id as datasource_id,
+ArtistName as vibbidi_artist,
+info ->> '$.source_title' as vibbidi_title,
+SourceURI,
+Info
+FROM datasources
+where
+datasources.Valid = 1
+and
+(
+datasources.Info ->> '$.vibbidi_title' = 'null'
+or
+datasources.Info ->> '$.vibbidi_title' is null
+or
+datasources.Info ->> '$.vibbidi_title'  = ''
+or
+datasources.Info ->> '$.vibbidi_artist' = 'null'
+or
+datasources.Info ->> '$.vibbidi_artist' is null
+or
+datasources.Info ->> '$.vibbidi_artist'  = ''
+)
+and
+(
+ArtistName is not null
+and
+info ->> '$.source_title' is not null
+)
+
+) as t1
+on t1.datasource_id = datasources.id
+set
+ datasources.Info = JSON_SET(IFNULL(datasources.Info, JSON_OBJECT()),'$.vibbidi_artist',t1.vibbidi_artist,'$.vibbidi_title',t1.vibbidi_title)
